@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Birthday Hanna ❤️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff7eb9;
+            --secondary: #ff65a3;
+            --accent: #7a5dfa;
+            --bg-gradient: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --shadow: 0 8px 32px rgba(255, 105, 180, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-gradient);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #4a4a4a;
+        }
+
+        /* Background Animations */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 420px;
+            height: 85vh;
+            position: relative;
+            perspective: 1000px;
+        }
+
+        .page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: none;
+            overflow-y: auto;
+        }
+
+        .page.active {
+            display: flex;
+            animation: pageIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes pageIn {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        h1 { font-family: 'Great Vibes', cursive; color: var(--secondary); font-size: 2.5rem; margin: 10px 0; }
+        p { line-height: 1.6; font-size: 0.95rem; }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 101, 163, 0.4);
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+
+        .btn:active { transform: scale(0.95); }
+
+        /* Loading Screen */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .heart-loader {
+            width: 50px; height: 50px; background: var(--primary);
+            transform: rotate(45deg); animation: heartBeatLoader 1.2s infinite;
+        }
+        .heart-loader::before, .heart-loader::after {
+            content: ""; width: 50px; height: 50px;
+            background: var(--primary); border-radius: 50%;
+            position: absolute;
+        }
+        .heart-loader::before { left: -25px; }
+        .heart-loader::after { top: -25px; }
+
+        @keyframes heartBeatLoader {
+            0% { transform: rotate(45deg) scale(0.8); }
+            5% { transform: rotate(45deg) scale(0.9); }
+            10% { transform: rotate(45deg) scale(0.8); }
+            15% { transform: rotate(45deg) scale(1); }
+            50% { transform: rotate(45deg) scale(0.8); }
+            100% { transform: rotate(45deg) scale(0.8); }
+        }
+
+        /* Password Keypad */
+        .pass-dots { display: flex; gap: 15px; margin: 20px 0; }
+        .dot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--primary); }
+        .dot.filled { background: var(--primary); }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+        .key { 
+            width: 60px; height: 60px; border-radius: 50%; border: 1px solid #ddd;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1.2rem; background: white; cursor: pointer;
+        }
+        .key:active { background: #eee; }
+
+        /* Game Elements */
+        .game-header { width: 100%; margin-bottom: 15px; }
+        .progress-container { width: 100%; background: #eee; height: 10px; border-radius: 5px; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: var(--secondary); border-radius: 5px; transition: width 0.3s; }
+        
+        #game-area { position: relative; width: 100%; height: 300px; overflow: hidden; border: 2px solid var(--primary); border-radius: 15px; background: white; }
+        
+        .falling-heart { position: absolute; font-size: 30px; cursor: pointer; user-select: none; animation: heartFade 0.3s ease-out forwards; animation-play-state: paused; }
+        @keyframes heartFade { to { transform: scale(0); opacity: 0; } }
+
+        .quiz-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .btn-shrink { transition: transform 0.2s ease-out; transform-origin: center; }
+
+        .wheel-container { position: relative; width: 280px; height: 280px; margin: 20px 0; }
+        #wheel { width: 100%; height: 100%; border-radius: 50%; border: 5px solid white; transition: transform 5s cubic-bezier(0.1, 0, 0, 1); background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 40px; z-index: 10; color: #4a4a4a; }
+
+        /* Spin Win Popup */
+        #spin-popup {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95); z-index: 100; border-radius: 30px;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            animation: popupIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popupIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+        /* General Popup Design (Page 5) */
+        .page-popup {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--card-bg); backdrop-filter: blur(10px); z-index: 100; border-radius: 30px;
+            padding: 30px; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+            animation: popupIn 0.5s ease forwards;
+        }
+
+        /* Final Page Header Animation */
+        @keyframes finalHeaderAnim {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            70% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="loader">
+    <div class="heart-loader"></div>
+    <p style="margin-top: 60px; color: var(--secondary); font-weight: 600;">Loading Love...</p>
+</div>
+
+<div class="container">
+    <div id="page1" class="page active">
+        <h1>Welcome My Love ❤️</h1>
+        <p>You're the most beautiful chapter in my life story. Ready for a surprise?</p>
+        <button class="btn" onclick="goToPage(2)">Start</button>
+    </div>
+
+    <div id="page2" class="page">
+        <header style="position: sticky; top: 0; color: var(--secondary); font-weight: bold;">Forever Yours 💌</header>
+        <h3>Enter the Secret Password</h3>
+        <div class="pass-dots" id="pass-dots">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+        <div class="keypad" id="keypad">
+            </div>
+        <p id="pass-error" style="color: red; font-size: 0.8rem; height: 20px; margin: 5px 0 0 0;"></p>
+    </div>
+
+    <div id="page3" class="page">
+        <h1 style="font-size: 2rem;">Happy Birthday Hanna 🎂❤️</h1>
+        <div style="text-align: left; background: white; padding: 20px; border-radius: 15px; font-size: 0.9rem; margin: 10px 0;">
+            Hi baby,,<br>
+            আজ তোমার জন্মদিন😩 অনেক দিন ধরে এইদিনের অপেক্ষা ছিলাম🥺👉👈<br>
+            আগের বার ভালো ভাবে প্রস্তুতি নিতে পারি নাই 😕 কিন্তু এইবার নিছি 😝<br>
+            তো হানি আজকে তোমার জান্মুদিন 🐸 মানে জন্মদিন।<br><br>
+            <strong>Happy birthday Hanna</strong>
+        </div>
+        <button class="btn" onclick="goToPage(4)">Next Page ➜</button>
+    </div>
+
+    <div id="page4" class="page">
+        <div class="game-header">
+            <p>Games Completed: <span id="game-count">0</span> / 6</p>
+            <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
+        </div>
+        
+        <div id="game-content" style="width: 100%; flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            </div>
+        <button class="btn" style="background: #999; font-size: 0.8rem; padding: 8px 20px;" onclick="skipGame()">Skip</button>
+    </div>
+
+    <div id="page5" class="page">
+        <p>বাহ তুমি তো দেখি সব গেম শেষ করে ফেলেছো 😻<br> তুমি তো জিনিয়াস 🐸</p>
+        <button class="btn" onclick="showCustomPopup5()">শেষ করুন</button>
+        
+        <div id="popup5" class="page-popup">
+            <h2 style="font-family: 'Great Vibes', cursive; color: var(--secondary);">এতো তাড়াতাড়ি শেষ করতে চাও? 😕🥺</h2>
+            <p style="margin: 20px 0;">পঁচা মেয়ে!</p>
+            <p>আর একটু দাড়াও, ব্যাঙ তোমার সাথে কথা বলবে 🐸</p>
+            </div>
+    </div>
+
+    <div id="page6" class="page">
+        <p style="text-align: left; margin: 0;">
+            Happy birthday vabi 🐸<br>
+            বাংলায়ও বলি শুভ জন্ম দিন 🐸<br><br>
+            তুমি কিন্তু আমায় মেয়ে খুঁজে দোয়ার আশা দিছিলে 🥺 এখনও খুঁজে দেও নাই 😭🐸<br>
+            আমি কিন্তু ইমিন ভাইয়াকে বিচার দিবো।<br>
+            হেতেয় তোমায় কচু খাওয়াই দিবে 😒🐸<br>
+            তখন তোমার শিক্ষা হবে 😜🐸
+        </p>
+        <button class="btn" onclick="goToPage(7)">Next ➜</button>
+    </div>
+
+    <div id="page7" class="page">
+        <h1 style="animation: finalHeaderAnim 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; margin-bottom: 20px;">HAPPY BIRTHDAY ❤️</h1>
+        <div style="text-align: left; font-size: 0.85rem; max-height: 280px; overflow-y: auto; padding-right: 5px; margin: 0;">
+            আজকে তোমার জন্ম দিন ❤️<br>
+            অনেক খুশির দিন। আজকে কোনো কারণে মন খারাপ বা চুপচাপ বসে থাকবা না 🙃<br>
+            নতুন ভাবে সব কিছু শুরু কর।<br>
+            আর আমার দোয়া থাকবে সবসময় জানু 🫠💝<br>
+            আর একটা কথা সবসময় নিজের খেয়াল রাখিস!<br><br>
+            কাছে থাকলে তোমায় কচু (চকলেট) দিতাম 🐸🔪<br>
+            এহে তোর তো কেক কাটা হলো না 😕<br>
+            কি করা যায় 😭 থাক কেক খাওয়া ভালো না 😕<br>
+            কেক খাইলে তুই মোটু হয়ে যাবি 😒🐸 (143)
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- CANVAS BACKGROUND (Simplified/Mobile Optimized) ---
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + 30;
+            this.size = Math.random() * 10 + 10;
+            this.speed = Math.random() * 1 + 0.5;
+            this.opacity = Math.random() * 0.4 + 0.2;
+        }
+        update() {
+            this.y -= this.speed;
+            if (this.y < -30) this.reset();
+        }
+        draw() {
+            ctx.fillStyle = `rgba(255, 182, 193, ${this.opacity})`;
+            ctx.font = `${this.size}px serif`;
+            ctx.fillText('❤️💝', this.x, this.y);
+        }
+    }
+    const particleCount = Math.min(25, window.innerWidth / 15);
+    for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+
+    function animateBg() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animateBg);
+    }
+    animateBg();
+
+    // --- NAVIGATION ---
+    let currentPage = 1;
+    function goToPage(pageNum) {
+        const loader = document.getElementById('loader');
+        loader.style.display = 'flex';
+        const delay = Math.random() * 1000 + 1500; 
+        
+        setTimeout(() => {
+            document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); if(p.id !== 'page5') { p.querySelectorAll('.page-popup').forEach(pop => pop.style.display='none'); } });
+            document.getElementById(`page${pageNum}`).classList.add('active');
+            loader.style.display = 'none';
+            currentPage = pageNum;
+            if(pageNum === 4) startGames();
+            else stopGames(); 
+        }, delay);
+    }
+
+    // --- PASSWORD SYSTEM ---
+    let passCode = "";
+    const correctPass = "1122";
+    const keypad = document.getElementById('keypad');
+    for(let i=1; i<=9; i++) createKey(i);
+    createKey(0);
+
+    function createKey(num) {
+        const k = document.createElement('div');
+        k.className = 'key'; k.innerText = num;
+        k.onclick = () => handleInput(num.toString());
+        keypad.appendChild(k);
+    }
+
+    function handleInput(val) {
+        if(passCode.length < 4) {
+            passCode += val; updateDots();
+            if(passCode.length === 4) {
+                if(passCode === correctPass) { goToPage(3); } 
+                else {
+                    document.getElementById('pass-error').innerText = "ভুল পাসওয়ার্ড। মন কোই থাকে 🫵🤨🔪";
+                    setTimeout(() => { passCode = ""; updateDots(); document.getElementById('pass-error').innerText = ""; }, 1000);
+                }
+            }
+        }
+    }
+
+    function updateDots() {
+        const dots = document.querySelectorAll('#page2 .dot');
+        dots.forEach((d, i) => {
+            if(i < passCode.length) d.classList.add('filled');
+            else d.classList.remove('filled');
+        });
+    }
+
+    // --- GAME SYSTEM ---
+    let currentGame = 1;
+    let heartInterval, heartTimer;
+    const totalGames = 6;
+
+    function updateProgress() {
+        document.getElementById('game-count').innerText = currentGame - 1;
+        document.getElementById('progress-bar').style.width = ((currentGame - 1) / totalGames * 100) + "%";
+    }
+
+    function stopGames() {
+        clearInterval(heartInterval); clearInterval(heartTimer);
+    }
+
+    function skipGame() {
+        stopGames();
+        currentGame++;
+        if(currentGame > totalGames) goToPage(5);
+        else startGames();
+    }
+
+    function startGames() {
+        updateProgress();
+        const container = document.getElementById('game-content');
+        container.innerHTML = "";
+
+        // Game 1: Catch The Hearts! (Now Pops)
+        if(currentGame === 1) {
+            container.innerHTML = `<h4>Catch Hearts (Pop!) 💖</h4><div id="game-area"></div><p id="timer">Time: 10</p><p id="score">Score: 0</p>`;
+            let score = 0; let time = 10; const area = document.getElementById('game-area');
+            heartInterval = setInterval(() => {
+                const h = document.createElement('div'); h.className = 'falling-heart';
+                h.style.left = Math.random() * 85 + 5 + "%"; h.innerText = '💖'; h.style.top = "-40px";
+                h.onclick = () => { 
+                    score++; document.getElementById('score').innerText = "Score: " + score; 
+                    h.style.animationPlayState = 'running'; // Trigger fade out
+                    setTimeout(() => { if(h.parentNode) h.remove(); }, 300);
+                };
+                area.appendChild(h);
+                let pos = -40; const fallSpeed = Math.random() * 2 + 1;
+                const fall = setInterval(() => { pos += fallSpeed; h.style.top = pos + "px"; if(pos > 300) { clearInterval(fall); if(h.parentNode && h.style.animationPlayState !== 'running') h.remove(); } }, 16);
+                h.dataset.fallInterval = fall; // Store interval ID for cleanup
+            }, 600);
+            heartTimer = setInterval(() => {
+                time--; document.getElementById('timer').innerText = "Time: " + time;
+                if(time <= 0) { 
+                    stopGames(); // Clean intervals
+                    // Force clear falling hearts intervals if any remain (paranoid cleanup)
+                    area.querySelectorAll('.falling-heart').forEach(h => clearInterval(h.dataset.fallInterval));
+                    container.innerHTML = `<h4>Time Up! Score: ${score}</h4><button class="btn" onclick="skipGame()">Next Game</button>`; 
+                }
+            }, 1000);
+        }
+
+        // Game 2: Love Quiz (No Shrinking Twist, Button Swap)
+        else if(currentGame === 2) {
+            container.innerHTML = `
+                <h4>Love Quiz</h4>
+                <div id="quiz-q" style="margin-bottom: 20px; font-weight:600;">1) তুমি দিনে দিনে আমায় ভুলে যাচ্ছো? 😒</div>
+                <div class="quiz-btns" id="quiz-options">
+                    <button class="btn" id="yes-btn" onclick="quizAns(true)">হ্যাঁ</button>
+                    <button class="btn btn-shrink" id="no-btn" onmouseover="handleQuizNoHover()" onclick="quizAns(false)">না</button>
+                </div>
+            `;
+            quizStep = 1; noBtnShrinkScale = 1; quizCorrectAnsCount = 0;
+        }
+
+        // Game 3: Spin The Wheel (Bigger, Popup Win)
+        else if(currentGame === 3) {
+            container.innerHTML = `
+                <h4>তুমি আমায় কি দিতো চাও 😌</h4>
+                <div class="wheel-container">
+                    <div class="wheel-pointer">▼</div>
+                    <canvas id="wheel"></canvas>
+                    <div id="spin-popup">
+                        <p style="font-size:1.2rem; margin:0;">You're giving me:</p>
+                        <h2 id="spin-win-text" style="color:var(--secondary); font-family:'Great Vibes', cursive; margin: 10px 0;"></h2>
+                    </div>
+                </div>
+                <button class="btn" id="spin-btn" onclick="spinWheel()">Spin Wheel</button>
+            `;
+            drawWheel();
+        }
+
+        // Game 4: Balloon Pop (Kept as requested)
+        else if(currentGame === 4) {
+            container.innerHTML = `<h4>Balloon Pop 🎈</h4><div id="game-area"></div><p id="pop-msg" style="min-height:2em; font-weight:600; color:var(--secondary); margin-top:10px;"></p>`;
+            const area = document.getElementById('game-area');
+            const msgs = ["I Love You ❤️", "You're Cute 🥰", "My Jaan 🥺", "my Baby👑", "Hanna 💖"];
+            for(let i=0; i<8; i++){
+                const b = document.createElement('div');
+                b.style.cssText = `position:absolute; width:45px; height:55px; border-radius:50%; cursor:pointer; transition:transform 0.2s ease-out;`;
+                b.style.left = Math.random()*80 + 5 + "%"; b.style.top = Math.random()*75 + 5 + "%";
+                b.style.backgroundColor = `hsl(${Math.random()*360}, 70%, 75%)`;
+                b.onclick = () => {
+                    if(b.style.transform === "scale(0)") return;
+                    b.style.transform = "scale(0)";
+                    document.getElementById('pop-msg').innerText = msgs[Math.floor(Math.random()*msgs.length)];
+                    if(area.querySelectorAll('.btn-pop-clicked').length === 7) skipGame(); // Assuming 8 total
+                    b.classList.add('btn-pop-clicked');
+                    if(area.querySelectorAll('.btn-pop-clicked').length === 8) setTimeout(skipGame, 800);
+                };
+                area.appendChild(b);
+            }
+        }
+
+        // Game 5: Love Calculator
+        else if(currentGame === 5) {
+            container.innerHTML = `
+                <h4>Love Calculator 😍</h4>
+                <input type="text" id="name1" placeholder="Her Name " style="width: 80%; padding: 10px; margin: 5px 0; border: 2px solid var(--primary); border-radius: 10px; outline: none;">
+                <input type="text" id="name2" placeholder="Your Name " style="width: 80%; padding: 10px; margin: 10px 0; border: 2px solid var(--primary); border-radius: 10px; outline: none;">
+                <button class="btn" onclick="calcLove()">Calculate</button>
+                <div id="love-res" style="margin-top: 15px; font-weight:600;"></div>
+            `;
+        }
+        
+        // Game 6: Skip/Auto Page 5
+        else if(currentGame === 6) { skipGame(); }
+    }
+
+    // --- QUIZ LOGICS ---
+    let quizStep = 1, noBtnShrinkScale = 1, quizCorrectAnsCount = 0;
+    function handleQuizNoHover() {
+        if(quizStep === 1 || quizStep === 2) { // Twist for Q1 and Q2
+            noBtnShrinkScale -= 0.15;
+            const noBtn = document.getElementById('no-btn');
+            noBtn.style.transform = `scale(${Math.max(noBtnShrinkScale, 0.1)})`;
+            if(noBtnShrinkScale <= 0.2) { noBtn.style.display = 'none'; quizAns(true); } // Force 'Yes'
+        }
+    }
+    function quizAns(isYes) {
+        if(quizStep === 1) { // Q1 Done
+            quizCorrectAnsCount++; // Forced or real yes
+            quizStep = 2; noBtnShrinkScale = 1; // Reset twist
+            const options = document.getElementById('quiz-options');
+            options.querySelectorAll('.btn').forEach(b => {b.style.display = 'block'; b.style.transform = 'scale(1)';}); // ResetBtns
+            document.getElementById('quiz-q').innerText = "2) আমি কেমন.?";
+            document.getElementById('yes-btn').innerText = "ভালু"; // Target correct
+            document.getElementById('no-btn').innerText = "পঁচা";
+        } else if(quizStep === 2) { // Q2 Done
+            if(isYes) quizCorrectAnsCount++; // Only if clicked valoo
+            quizStep = 3;
+            document.getElementById('quiz-q').innerText = "3) তুমি কি আমায় ভালোবাসো? 🥺";
+            document.getElementById('quiz-options').innerHTML = `<button class="btn" onclick="skipGame()">হ্যাঁ</button><button class="btn" onclick="skipGame()">না </button>`;
+        }
+    }
+
+    // --- WHEEL LOGICS ---
+    const wheelOptions = ["১ কোটি টাকা 🐸", "ভালুপাসা", "kiss", "Hag", "গিফট 😩", "তোমার ছবি 😻"];
+    function drawWheel() {
+        const c = document.getElementById('wheel'); const x = c.getContext('2d');
+        c.width = 280; c.height = 280; const arc = 2 * Math.PI / wheelOptions.length;
+        wheelOptions.forEach((opt, i) => {
+            x.beginPath(); x.fillStyle = i % 2 === 0 ? '#ff7eb9' : '#ffb6c1';
+            x.moveTo(140, 140); x.arc(140, 140, 140, i*arc, (i+1)*arc); x.fill();
+            x.save(); x.translate(140, 140); x.rotate(i*arc + arc/2);
+            x.fillStyle = 'white'; x.font = 'bold 12px Arial'; x.textAlign = "right"; x.fillText(opt, 130, 5); x.restore();
+        });
+    }
+    function spinWheel() {
+        const w = document.getElementById('wheel'); const btn = document.getElementById('spin-btn');
+        if(btn.disabled) return; btn.disabled = true;
+        const deg = 1800 + Math.random() * 2000; w.style.transform = `rotate(${deg}deg)`;
+        setTimeout(() => {
+            const actualDeg = deg % 360; const winningIndex = Math.floor((360 - actualDeg) / (360 / wheelOptions.length)) % wheelOptions.length;
+            const winText = wheelOptions[winningIndex];
+            document.getElementById('spin-win-text').innerText = winText;
+            document.getElementById('spin-popup').style.display = 'flex';
+            setTimeout(skipGame, 3500); // Popup delay
+        }, 5000); // Spin duration
+    }
+
+    // --- LOVE CALC LOGIC ---
+    function calcLove() {
+        const n1 = document.getElementById('name1').value.toLowerCase();
+        const n2 = document.getElementById('name2').value.toLowerCase();
+        if(!n1 || !n2) return;
+        const score = Math.floor(Math.random() * 31) + 70; // 70-100
+        document.getElementById('love-res').innerHTML = `❤️ Score: ${score}% ❤️<br>`;
+        setTimeout(skipGame, 3000);
+    }
+
+    // --- PAGE 5: CUSTOM POPUP & TRANSITION ---
+    function showCustomPopup5() {
+        document.getElementById('popup5').style.display = 'flex';
+        setTimeout(() => goToPage(6), 4000); // Auto transition after 4s
+    }
+
+</script>
+</body>
+</html>
